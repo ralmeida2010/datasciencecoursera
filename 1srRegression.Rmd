@@ -1,0 +1,133 @@
+---
+title: "1stRegression - Forest Fires"
+author: "Rui Almeida"
+date: "2024-02-04"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introdution
+
+This is the final project of the Scientist Toolbox training. The objective is to estimate and evaluate the relationship between the FWI meteorological index and the number of daily forest fires in mainland Portugal (NIR variable). For this forecast, information from the FWI meteorological index (Fire Weather Index) must be used, represented by the daily average of all points on the ERAS5 grid of the ECWMF model (FWI variable) and the following data from the previous day, Number of forest fires ( variable NIRAnt), Sum of total burned area (Variable AAant) and FWI (variable FWIAnt). The data used is public and is provided by the Institute for Nature Conservation and Forests of Portugal (<https://www.icnf.pt/florestas/gfr/gfrgestaoinformacao/estatisticas>).
+
+For the final project work the question is: "Is it possible to estimate the Number of daily forest fires based on the daily Fire Weather Index and with data from the previous day regarding the Daily Number of Fires, total burned area and Fire Weather Index?":
+
+## DATA
+
+# Install the package that allows you to read csv files and activate the library
+
+#install.packages("readr") 
+library(readr) 
+#Activate the library 
+library(stats)
+
+#Read and load the CSV file into a table 
+file <- "data.csv" 
+dados  <-read.table(file, sep = ";", header = TRUE)
+
+# Set the desired proportion for the validation set (30%)
+
+validation_proportion <- 0.3
+
+# Set the desired number of iterations - 1000
+
+num_iterations <- 1000
+
+# Store evaluation metrics for each iteration
+
+results <- data.frame( R_squared = numeric(num_iterations), MSE = numeric(num_iterations), coef_intercept = numeric(num_iterations), coef_FWI = numeric(num_iterations), coef_NIRAnt = numeric(num_iterations), coef_AAAnt = numeric(num_iterations), coef_FWIAnt = numeric(num_iterations), p_value_intercept = numeric(num_iterations), p_value_FWI = numeric(num_iterations), p_value_NIRAnt = numeric(num_iterations), p_value_AAAnt = numeric(num_iterations), p_value_FWIAnt = numeric(num_iterations) )
+
+# Calculate the total number of observations in your dataset
+
+total_observations <- nrow(dados)
+
+# Calculate the number of observations for the validation set
+
+validation_size <- round(validation_proportion * total_observations)
+
+# Create an empty data frame to store accumulated results
+
+all_results <- data.frame(Observed = numeric(0), Predicted = numeric(0))
+
+# Loop to perform iterations
+
+for (i in 1: num_iterations) { 
+# Create random indices for the validation 
+
+validation_indices <- sample(1:total_observations, validation_size)
+
+# Create the training set by excluding rows from the validation set
+
+training_set <- dados[-validation_indices, ]
+
+# Create the validation set using randomly selected rows
+
+validation_set <- dados[validation_indices, ]
+
+# Fit the multiple linear regression model using the training set
+
+modelo <- lm(NIR ~ FWI + NIRAnt + AAAnt + FWIAnt, data = training_set)
+
+# Make predictions on the validation set
+
+validation_predictions <- predict(modelo, newdata = validation_set)
+
+# Append the results of the current iteration to the accumulated dataset
+
+all_results <- rbind(all_results, data.frame(Observed = validation_set$NIR, Predicted = validation_predictions))
+
+# Calculate and store evaluation metrics and p-values
+
+model_summary <- summary(modelo) 
+results[i, "R_squared"] <- model_summary$adj.r.squared  
+results[i, "MSE"] <- mean((validation_predictions - validation_set$NIR)^2)
+
+# Coefficients
+
+results[i, "coef_intercept"] <- coef(modelo)[1] 
+results[i, "coef_FWI"] <- coef(modelo)[2] 
+results[i, "coef_NIRAnt"] <- coef(modelo)[3] 
+results[i, "coef_AAAnt"] <- coef(modelo)[4] 
+results[i, "coef_FWIAnt"] <- coef(modelo)[5]
+
+# P-values
+
+results[i, "p_value_intercept"] <- coef(summary(modelo))[1, "Pr(>|t|)"] 
+results[i, "p_value_FWI"] <- coef(summary(modelo))[2, "Pr(>|t|)"] 
+results[i, "p_value_NIRAnt"] <- coef(summary(modelo))[3, "Pr(>|t|)"] 
+results[i, "p_value_AAAnt"] <- coef(summary(modelo))[4, "Pr(>|t|)"] 
+results[i, "p_value_FWIAnt"] <- coef(summary(modelo))[5, "Pr(>|t|)"]
+
+print(i)
+
+}
+
+# View a statistical summary of the model:
+
+```{r modelo}
+summary(results)
+```
+
+## Including Plots
+
+# Activate   'ggplot2'
+
+library(ggplot2)
+
+Embed plots:
+
+```{r validation points, echo=FALSE}
+
+  # Crie um gráfico de dispersão
+  ggplot(all_results, aes(x = Observed, y = Predicted)) +
+    geom_point() +
+    labs(title = paste("Iteration", i),
+         x = "Observed NIR",
+         y = "Predicted NIR")  
+  
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
