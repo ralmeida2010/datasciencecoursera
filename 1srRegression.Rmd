@@ -26,7 +26,7 @@ library(stats)
 
 #Read and load the CSV file into a table 
 file <- "data.csv" 
-dados  <-read.table(file, sep = ";", header = TRUE)
+dados <-read.table(file, sep = ";", header = TRUE)
 
 # Set the desired proportion for the validation set (30%)
 
@@ -55,7 +55,8 @@ all_results <- data.frame(Observed = numeric(0), Predicted = numeric(0))
 # Loop to perform iterations
 
 for (i in 1: num_iterations) { 
-# Create random indices for the validation 
+
+# Create random indices for the validation
 
 validation_indices <- sample(1:total_observations, validation_size)
 
@@ -81,17 +82,13 @@ all_results <- rbind(all_results, data.frame(Observed = validation_set$NIR, Pred
 
 # Calculate and store evaluation metrics and p-values
 
-model_summary <- summary(modelo) 
-results[i, "R_squared"] <- model_summary$adj.r.squared  
-results[i, "MSE"] <- mean((validation_predictions - validation_set$NIR)^2)
+model_summary <- summary(modelo)
+
+results[i, "R_squared"] <- model_summary$adj.r.squared results[i, "MSE"] <- mean((validation_predictions - validation_set$NIR)^2)
 
 # Coefficients
 
-results[i, "coef_intercept"] <- coef(modelo)[1] 
-results[i, "coef_FWI"] <- coef(modelo)[2] 
-results[i, "coef_NIRAnt"] <- coef(modelo)[3] 
-results[i, "coef_AAAnt"] <- coef(modelo)[4] 
-results[i, "coef_FWIAnt"] <- coef(modelo)[5]
+results[i, "coef_intercept"] <- coef(modelo)[1] results[i, "coef_FWI"] <- coef(modelo)[2] results[i, "coef_NIRAnt"] <- coef(modelo)[3] results[i, "coef_AAAnt"] <- coef(modelo)[4] results[i, "coef_FWIAnt"] <- coef(modelo)[5]
 
 # P-values
 
@@ -113,7 +110,7 @@ summary(results)
 
 ## Including Plots
 
-# Activate   'ggplot2'
+# Activate 'ggplot2'
 
 library(ggplot2)
 
@@ -124,7 +121,7 @@ Embed plots:
   # Crie um gráfico de dispersão
   ggplot(all_results, aes(x = Observed, y = Predicted)) +
     geom_point() +
-    labs(title = paste("Iteration", i),
+    labs(title = paste("Observed NIR vs Predicted NIR  - N.Iteration", i),
          x = "Observed NIR",
          y = "Predicted NIR")  
   
